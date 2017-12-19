@@ -1,4 +1,3 @@
-// -*- c++ -*-
 // Copyright 2017 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include<unistd.h>
 
-// TODO: Make this work for function pointers and lambdas too.
-template <typename MA, typename A, typename B>
-auto
-Map(std::function<B(const A&)> func, const MA& in)
-  -> decltype(MA::bindtype(B()))
-{
-  typedef decltype(in.bindtype(B())) MB;
-  std::function<MB(A)> f2 = [&func,&in](const A& t) -> MB {
-    return MB::ret(func(t));
-  };
-  return in.bind(f2);
-}
-
-template <typename MA, typename A>
-void
-Do(std::function<void(const A&)> func, const MA& in)
-{
-  std::function<A(const A&)> f2 = [&func, &in](const A& t) -> A {
-    func(t);
-    return t;
-  };
-  Map(f2, in);
-}
+class FDWrap {
+public:
+  FDWrap() {}
+  FDWrap(const FDWrap& rhs) {
+    fd_ = dup(rhs.fd_);
+  }
+  FDWrap(FDWrap&& rhs) {
+    rhs.fd_ = fd_;
+    fd_ = -1;
+  }
+  FDWrap(int fd): fd_(fd) {
+  }
+  ~FDWrap()
+  {
+    if (fd_ > -1) {
+      close(fd_);
+    }
+  }
+  int get() const { return fd_; }
+private:
+  int fd_ = -1;
+};

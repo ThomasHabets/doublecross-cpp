@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include<iostream>
-#include<unistd.h>
 #include<cstdio>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include"maybe.h"
+#include<cstring>
+#include<fcntl.h>
+#include<iostream>
+#include<sys/stat.h>
+#include<sys/types.h>
+#include<unistd.h>
+
 #include"list.h"
+#include"maybe.h"
 #include"monad.h"
+#include"orerror.h"
 
 template<typename T>
 T
@@ -82,7 +85,7 @@ maybe_monad()
     Maybe<int> n = Maybe<int>::Nothing();
     try {
       n.get();
-    } catch(const std::exception& e) {
+    } catch(const std::runtime_error& e) {
       std::cout << "  Exception: " << e.what() << std::endl;
       threw = true;
     }
@@ -118,77 +121,9 @@ list_monad()
   }
 }
 
-class FDWrap {
-public:
-  FDWrap() {}
-  FDWrap(const FDWrap& rhs) {
-    fd_ = dup(rhs.fd_);
-  }
-  FDWrap(FDWrap&& rhs) {
-    rhs.fd_ = fd_;
-    fd_ = -1;
-  }
-  FDWrap(int fd): fd_(fd) {
-  }
-  ~FDWrap()
-  {
-    if (fd_ > -1) {
-      close(fd_);
-    }
-  }
-  int get() const { return fd_; }
-private:
-  int fd_ = -1;
-};
-
-Maybe<int>
-maybe_open(const char* fn)
-{
-  int fd = open(fn, O_RDONLY);
-  if (fd < 0) {
-    return Maybe<int>::Nothing();
-  }
-  return Maybe<int>::Just(fd);
-}
-
-Maybe<std::string>
-maybe_read(FDWrap fd)
-{
-  std::cout << "Reading using fd " << fd.get() << std::endl;
-  struct stat st;
-  {
-    const int rc = fstat(fd.get(), &st);
-    if (0 > rc) {
-      return Maybe<std::string>::Nothing();
-    }
-  }
-  std::vector<char> buf(st.st_size);
-  const int rc = read(fd.get(), buf.data(), buf.size());
-  if (0 > rc) {
-    return Maybe<std::string>::Nothing();
-  }
-  return Maybe<std::string>::Just(std::string(buf.begin(), buf.end()));
-}
-
-void
-cat(const char* fn)
-{
-  {
-    auto fd = maybe_open(fn);
-    auto fdw = fd.bind([](int n) -> Maybe<FDWrap> {
-        return Maybe<FDWrap>::Just(n);
-    });
-    auto data = fdw.bind(&maybe_read);
-    std::cout << data.get() << std::endl;
-  }
-
-  std::cout << maybe_open(fn).bind(&maybe_read).get() << std::endl;
-}
-
 int
 main(int argc, char** argv)
 {
   maybe_monad();
   list_monad();
-  cat(argv[1]);
 }
