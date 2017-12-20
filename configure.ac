@@ -19,7 +19,7 @@ AC_PROG_MAKE_SET
 m4_ifdef([AM_SILENT_RULES],
   [AM_SILENT_RULES([yes])],
   [AC_SUBST([AM_DEFAULT_VERBOSITY], [1])])
-    
+
 CXXFLAGS="$CXXFLAGS -std=gnu++11"
 
 AC_CONFIG_FILES([Makefile])

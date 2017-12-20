@@ -12,22 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include<unistd.h>
 
-class FDWrap {
-public:
-  FDWrap();
-  FDWrap(const FDWrap& rhs);
-  FDWrap(FDWrap&& rhs);
-  FDWrap(int fd);
-  ~FDWrap();
+#include"fdwrap.h"
 
-  // Deleted just in case, so that I don't use them when I don't mean
-  // to.
-  FDWrap& operator=(const FDWrap&) = delete;
-  FDWrap& operator=(FDWrap&&) = delete;
+FDWrap::FDWrap()
+{
+}
 
-  int get() const;
-  void close();
-private:
-  int fd_ = -1;
-};
+FDWrap::FDWrap(const FDWrap& rhs)
+{
+  fd_ = dup(rhs.fd_);
+}
+
+FDWrap::FDWrap(FDWrap&& rhs)
+{
+  rhs.fd_ = fd_;
+  fd_ = -1;
+}
+
+FDWrap::FDWrap(int fd)
+    : fd_(fd)
+{
+}
+
+FDWrap::~FDWrap()
+{
+  close();
+}
+
+void
+FDWrap::close()
+{
+  if (fd_ > -1) {
+    ::close(fd_);
+  }
+  fd_ = -1;
+}
+
+int
+FDWrap::get() const
+{
+  return fd_;
+}

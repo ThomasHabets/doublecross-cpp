@@ -3,5 +3,5 @@ DISTCLEANFILES = *~
 
 noinst_PROGRAMS=cat newcpp
 
-cat_SOURCES=haskell/cat.cc
+cat_SOURCES=haskell/cat.cc haskell/fdwrap.cc
 newcpp_SOURCES=haskell/newcpp.cc
