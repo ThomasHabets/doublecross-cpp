@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 #include<functional>
+#include<memory>
 
 template<typename A>
 class Maybe {
@@ -41,13 +42,13 @@ public:
   // Takes `M<B> func(const A&)` and applies it to embedded value.
   template<typename F>
   auto bind(F&& func) const
-    -> decltype(func(A()))
+    -> typename std::result_of<F(const A&)>::type
   {
-    typedef decltype(func(A())) MB;
+    typedef typename std::result_of<F(const A&)>::type MB;
     if (nothing_) {
       return MB::Nothing();
     }
-    return func(val_);
+    return func(*val_);
   }
 
   // Ret. Just embed the value.
@@ -74,7 +75,7 @@ public:
     if (nothing_) {
       throw std::runtime_error("Maybe was Nothing");
     }
-    return val_;
+    return *val_;
   }
 
   // Check for 'nothing'ness.
@@ -85,10 +86,10 @@ public:
 
 private:
   Maybe() {}
-  Maybe(const A&v):val_(v), nothing_(false) {}
+  Maybe(const A&v)
+      :val_(new A(v)),
+       nothing_(false) {}
 
-  // TODO: this means that A needs to have a default constructor.
-  // Maybe good to get around this by making it a pointer?
-  A val_ = A();
+  std::unique_ptr<A> val_;
   bool nothing_ = true;
 };
