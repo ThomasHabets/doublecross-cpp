@@ -64,7 +64,7 @@ using map_ret_type = typename MA::template bindtype<map_b_type<Func, MA>>;
 
 
 /*
- * M<B> Map([callable], const M<A>&)
+ * M<B> Map(B func(A), const M<A>&)
  */
 template<typename Func, typename MA>
 auto
@@ -81,7 +81,7 @@ Map(Func&& func, const MA& in)
 }
 
 /*
- * void Do([callable], const M<A>&)
+ * void Do(void func(A), const M<A>&)
  *
  * Do is just a simplified Map() whose supplied function returns void.
  */
