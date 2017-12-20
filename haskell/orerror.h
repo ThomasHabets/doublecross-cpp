@@ -14,9 +14,10 @@
 // limitations under the License.
 //
 #include<functional>
+#include<memory>
 #include<string>
 
-template<typename T, typename E>
+template<typename A, typename E>
 class OrError {
  private:
   struct ErrObj {
@@ -26,7 +27,7 @@ class OrError {
 
  public:
   // Explicit constructors.
-  static OrError Just(const T&v) {
+  static OrError Just(const A&v) {
     return OrError(v);
   }
   static OrError Error(const E& e) {
@@ -36,26 +37,26 @@ class OrError {
   // Bind.
   template<typename F>
   auto bind(F&& func) const
-    -> decltype(func(T()))
+      -> typename std::result_of<F(const A&)>::type
   {
-    typedef decltype(func(T())) MB;
+    typedef typename std::result_of<F(const A&)>::type MB;
     if (is_error_) {
       return MB::Error(error_);
     }
-    return func(val_);
+    return func(*val_);
   }
 
   // Ret.
-  static OrError ret(const T&v) {
+  static OrError ret(const A&v) {
     return OrError(v);
   }
 
   // Get value.
-  T get() const {
+  A get() const {
     if (is_error_) {
       throw error_;
     }
-    return val_;
+    return *val_;
   }
 
   const bool is_error() const { return is_error_; }
@@ -66,7 +67,7 @@ class OrError {
 
   // Used for type conversions.
   template<typename B> using bindtype = OrError<B, E>;
-  typedef T type;
+  typedef A type;
 
   //  template<typename B>
   //  typedef OrError<B, E> transform_type;
@@ -76,13 +77,13 @@ class OrError {
        error_(eo.error)
   {
   }
-  OrError(const T&v):
-      val_(v),
-      is_error_(false)
+  OrError(const A&v)
+      :val_(new A(v)),
+       is_error_(false)
   {
   }
 
-  T val_ = T();
+  std::unique_ptr<A> val_;
   bool is_error_ = false;
   E error_;
 };
