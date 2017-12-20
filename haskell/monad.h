@@ -23,20 +23,18 @@ struct func_type_impl;
 
 // Lots of brute force here. Magic left to explain BEGIN.
 template<typename Callable>
-struct func_type_impl<Callable>
-{
+struct func_type_impl<Callable> {
   using type = typename func_type_impl<decltype(&Callable::operator())>::type;
 };
+
 template<typename C, typename Ret, typename... Args>
-struct func_type_impl<Ret(C::*)(Args...) const>
-{
+struct func_type_impl<Ret(C::*)(Args...) const> {
   using type = std::function<Ret(Args...)>;
 };
 
-// Specialization for function pointers
+// Specialization for function pointers.
 template<typename Ret, typename... Args>
-struct func_type_impl<Ret(*)(Args...)>
-{
+struct func_type_impl<Ret(*)(Args...)> {
   using type = std::function<Ret(Args...)>;
 };
 // Magic left to explain END.
