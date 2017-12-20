@@ -51,11 +51,9 @@ public:
   template <typename B>
   friend class List;
 
-  // Never called. Only used for type inference.
-  template<typename B>
-  static List<B> bindtype(B) {
-    throw std::runtime_error("List::bindtype() called");
-  }
+  // Used for type conversions.
+  template<typename B> using bindtype = List<B>;
+  typedef T type;
 private:
   List() {}
   List(const T&v):val_{v} {}

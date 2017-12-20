@@ -13,25 +13,84 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include<functional>
+#include<type_traits>
 
-// TODO: Make this work for function pointers and lambdas too.
-template <typename MA, typename A, typename B>
-auto
-Map(std::function<B(const A&)> func, const MA& in)
-  -> decltype(MA::bindtype(B()))
+namespace internal {
+
+template<typename... T>
+struct func_type_impl;
+
+// Lots of brute force here. Magic left to explain BEGIN.
+template<typename Callable>
+struct func_type_impl<Callable>
 {
-  typedef decltype(in.bindtype(B())) MB;
-  std::function<MB(A)> f2 = [&func,&in](const A& t) -> MB {
-    return MB::ret(func(t));
+  using type = typename func_type_impl<decltype(&Callable::operator())>::type;
+};
+template<typename C, typename Ret, typename... Args>
+struct func_type_impl<Ret(C::*)(Args...) const>
+{
+  using type = std::function<Ret(Args...)>;
+};
+
+// Specialization for function pointers
+template<typename Ret, typename... Args>
+struct func_type_impl<Ret(*)(Args...)>
+{
+  using type = std::function<Ret(Args...)>;
+};
+// Magic left to explain END.
+
+template<typename... T>
+using func_type = typename func_type_impl<typename std::decay<T>::type...>::type;
+
+// For `B Func(A)` and `M<A>`, return `B` type.
+// We need MA because possible `Func` overloading. (I think)
+//
+// Type requirements:
+//   * MA type needs to have `type` typedef to `A`.
+template<typename Func, typename MA>
+using map_b_type = typename std::result_of<Func(const typename MA::type&)>::type;
+
+// For `B Func(A)` and `M<A>`, return `M<B>` type.
+//
+// Type requirements:
+//   * MA type needs to have `type` typedef to `A`.
+//   * MA type needs to have `bindtype<B>` typedef to `M<B>`.
+template<typename Func, typename MA>
+using map_ret_type = typename MA::template bindtype<map_b_type<Func, MA>>;
+
+}  // namespace internal
+
+
+/*
+ * M<B> Map([callable], const M<A>&)
+ */
+template<typename Func, typename MA>
+auto
+Map(Func&& func, const MA& in)
+    -> internal::map_ret_type<Func, MA>
+{
+  typedef typename MA::type A;
+  typedef internal::map_ret_type<Func, MA> MB;
+  const internal::func_type<Func> f = std::forward<Func>(func);
+  const std::function<MB(A)> f2 = [&f](const A& t) -> MB {
+    return MB::ret(f(t));
   };
   return in.bind(f2);
 }
 
-template <typename MA, typename A>
+/*
+ * void Do([callable], const M<A>&)
+ *
+ * Do is just a simplified Map() whose supplied function returns void.
+ */
+template<typename Func, typename MA>
 void
-Do(std::function<void(const A&)> func, const MA& in)
+Do(Func&& func, const MA& in)
 {
-  std::function<A(const A&)> f2 = [&func, &in](const A& t) -> A {
+  typedef typename MA::type A;
+  const std::function<A(const A&)> f2 = [&func](const A& t) -> A {
     func(t);
     return t;
   };

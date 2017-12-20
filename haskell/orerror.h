@@ -23,7 +23,8 @@ class OrError {
     ErrObj(const E& e): error(e){}
     const E& error;
   };
-public:
+
+ public:
   // Explicit constructors.
   static OrError Just(const T&v) {
     return OrError(v);
@@ -63,12 +64,13 @@ public:
   template <typename B, typename E2>
   friend class OrError;
 
-  // Never called. Only used for type inference.
-  template<typename B>
-  static OrError<B, E> bindtype(B) {
-    throw std::runtime_error("OrError::bindtype() called");
-  }
-private:
+  // Used for type conversions.
+  template<typename B> using bindtype = OrError<B, E>;
+  typedef T type;
+
+  //  template<typename B>
+  //  typedef OrError<B, E> transform_type;
+ private:
   OrError(const ErrObj& eo)
       :is_error_(true),
        error_(eo.error)

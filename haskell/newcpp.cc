@@ -93,6 +93,27 @@ maybe_monad()
       std::cout << "ERROR: didn't throw\n";
     }
   }
+
+
+  // Test pointers.
+  {
+    Maybe<int*> n = Maybe<int*>::Just(new int);
+    Do(std::function<void(int * const&)>(
+        [](int*const a) -> void {
+          std::cout << "  A pointer: " << a << std::endl;
+        }
+    ), n);
+    n = Map(std::function<int*(int * const&)>(
+        [](int*const a) -> int* {
+          std::cout << "  delorted\n";
+          delete a;
+          return nullptr;
+        }
+    ), n);
+    if (n.get() != nullptr) {
+      std::cout << "  ERROR: Should have been nullptr. Was " << n.get() << std::endl;
+    }
+  }
 }
 
 // Create and map a list.

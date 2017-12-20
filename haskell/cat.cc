@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include<vector>
+#include<algorithm>
 #include<cstring>
 #include<string>
 #include<fcntl.h>
@@ -20,8 +22,6 @@
 #include<sys/types.h>
 
 #include"fdwrap.h"
-#include"list.h"
-#include"maybe.h"
 #include"monad.h"
 #include"orerror.h"
 
@@ -68,16 +68,29 @@ print(const OrError<std::string, std::string>& data)
   return 0;
 }
 
+std::string
+reverse(const std::string&in)
+{
+  std::vector<char> buf;
+  std::reverse_copy(in.begin(), in.end(), std::back_inserter(buf));
+  return std::string(buf.begin(), buf.end());
+}
+
 int
 cat(const std::string& fn)
 {
   auto data = open(fn).bind(&read);
-  std::function<std::string(const std::string&)> f = [](const std::string& in) -> std::string {
+  auto lambda = [](const std::string& in) -> std::string {
     std::vector<char> buf;
     std::reverse_copy(in.begin(), in.end(), std::back_inserter(buf));
     return std::string(buf.begin(), buf.end());
   };
-  data = Map(f, data);
+  std::function<std::string(const std::string&)> std_f = lambda;
+#if 1
+  data = Map(lambda, data);   // Lambda.
+  data = Map(std_f, data);    // std::function.
+  data = Map(reverse, data);  // Function pointer.
+#endif
   return print(data);
 }
 }
