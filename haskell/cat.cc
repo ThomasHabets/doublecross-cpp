@@ -77,16 +77,30 @@ reverse(const std::string&in)
   return std::string(buf.begin(), buf.end());
 }
 
+// Bind operator.
+template<typename MA, typename F>
+auto operator>>(MA ma, F&& func)
+    -> typename std::result_of<F(const typename MA::type&)>::type
+{
+  return ma.bind(std::forward<F>(func));
+}
+
 int
 cat(const std::string& fn)
 {
-  auto data = open(fn).bind(&read);
   auto lambda = [](const std::string& in) -> std::string {
     std::vector<char> buf;
     std::reverse_copy(in.begin(), in.end(), std::back_inserter(buf));
     return std::string(buf.begin(), buf.end());
   };
   std::function<std::string(const std::string&)> std_f = lambda;
+
+  // .bind() syntax.
+  auto data = open(fn).bind(&read);
+
+  // bind operator syntax.
+  data = open(fn) >> read;
+
 #if 1
   data = Map(lambda, data);   // Lambda.
   data = Map(std_f, data);    // std::function.
