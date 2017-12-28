@@ -16,6 +16,11 @@
 #include<functional>
 #include<type_traits>
 
+/*
+ * Implementing a Monad: see maybe.h for the Maybe monad as an
+ * example.
+ */
+
 namespace internal {
 
 template<typename... T>

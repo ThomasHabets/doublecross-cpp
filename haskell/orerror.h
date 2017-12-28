@@ -69,8 +69,6 @@ class OrError {
   template<typename B> using bindtype = OrError<B, E>;
   typedef A type;
 
-  //  template<typename B>
-  //  typedef OrError<B, E> transform_type;
  private:
   OrError(const ErrObj& eo)
       :is_error_(true),
